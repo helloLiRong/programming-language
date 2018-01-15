@@ -68,18 +68,67 @@ fun first_answer f list =
 		  | SOME v => v
 
 (* problem 8 *)
-fun all_answer f list =
-  let fun helper (xs, acc) =
-	case xs of
-	    [] => acc
-	  | x::xs => case f x of
-			 NONE => helper(xs, acc)
-		       | SOME lst => helper(xs,acc @ lst)
-  in
+fun all_answers f list =
+ let fun helper (xs, acc) =
+       case xs of
+	   [] => acc
+	 | x::xs => case f x of
+			NONE => NONE
+		      | SOME v => helper (xs, SOME(v @ valOf(acc)))
+ in
+     helper(list, SOME [])
+ end	       		     
       
+(* problem 9a *)
+val count_wildcards =
+  g (fn _=> 1) (fn x:string => 0)
+
+(* problem 9b *)
+val count_wild_and_variable_lengths =
+    g (fn _ => 1) (fn x => String.size x)
+
+(* problem 9c *)      
+fun count_some_var (strs, p) =
+  g (fn _ => 0) (fn x => if x = strs then 1 else 0) p
+  
+(* problem 10 *)
+fun check_pat p =
+  let fun find_var pat =
+	case pat of
+	    Variable x => [x]
+	   |TupleP ps => List.foldl (fn (p', acc) => (find_var p') @ acc) [] ps
+	   |ConstructorP (s', p') => find_var p'
+	   | _ => []		      
+      fun check_exists strs =
+	case strs of
+	    [] => true
+	  | x::xs => (not (List.exists (fn x' => x' = x) xs)) andalso check_exists xs									
+  in
+      check_exists (find_var p)
   end
       
-	      
+		      
+(* problem 11 *)
+fun match (value, pat) =
+  case (value, pat) of
+      (_, Wildcard) => SOME []
+    | (v, Variable s) => SOME [(s,v)]
+    | (Unit, UnitP) => SOME []
+    | (Const i, ConstP j) => if i = j then SOME [] else NONE
+    | (Tuple vs, TupleP ps) => if List.length vs = List.length ps
+			       then all_answers (fn x => match (#1 x,#2 x)) (ListPair.zip(vs,ps))
+			       else NONE					
+    | (Constructor(s2,v), ConstructorP(s1,p)) => if s1 = s2
+						 then match(v,p)
+						 else NONE							  
+    | _ => NONE
+	       
+
+(* problem 12 *)
+fun first_match (value, ps) =
+ SOME (first_answer (fn x => match (value, x)) ps)
+	       handle NoAnswer => NONE
+    
 (**** for the challenge problem only ****)
 
 datatype typ = Anything
@@ -89,43 +138,3 @@ datatype typ = Anything
 	     | Datatype of string
 
 (**** you can put all your code here ****)
-
-
-
-(* Homework3 Simple Test*)
-(* These are basic test cases. Passing these tests does not guarantee that your code will pass the actual homework grader *)
-(* To run the test, add a new line to the top of this file: use "homeworkname.sml"; *)
-(* All the tests should evaluate to true. For example, the REPL should say: val test1 = true : bool *)
-
-val test1 = only_capitals ["A","B","C"] = ["A","B","C"]
-
-val test2 = longest_string1 ["Aa","bc","C"] = "Aa"
-						 
-val test3 = longest_string2 ["Aa","bc","C"] = "bc"
-						 						 
-val test4a = longest_string3 ["Aa","bc","C"] = "Aa"
-
-val test4b = longest_string4 ["A","B","C"] = "C"
-						 
-val test5 = longest_capitalized ["A","bc","C"] = "A"
-
-val test6 = rev_string "abc" = "cba"
-				   
-val test7 = first_answer (fn x => if x > 3 then SOME x else NONE) [1,2,3,4,5] = 4
-										    
-(*
-val test8 = all_answers (fn x => if x = 1 then SOME [x] else NONE) [2,3,4,5,6,7] = NONE
-
-val test9a = count_wildcards Wildcard = 1
-
-val test9b = count_wild_and_variable_lengths (Variable("a")) = 1
-
-val test9c = count_some_var ("x", Variable("x")) = 1
-
-val test10 = check_pat (Variable("x")) = true
-
-val test11 = match (Const(1), UnitP) = NONE
-
-val test12 = first_match Unit [UnitP] = SOME []
-*)
-			       
