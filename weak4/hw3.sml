@@ -27,29 +27,29 @@ fun g f1 f2 p =
     end
 
 (* problem 1 *)
-fun only_capitals(strs) =
-  List.filter (fn s => Char.isUpper (String.sub(s,0))) strs
+val only_capitals =
+  List.filter (fn s => Char.isUpper (String.sub(s,0)))
 
 (* problem 2 *)	      
-fun longest_string1(strs) =
+val longest_string1 =
   foldl (fn (x, longest_string) => if String.size x > String.size longest_string
 				   then x
-				   else longest_string) "" strs
+				   else longest_string) ""
 
 (* problem 3 *)
-fun longest_string2(strs) =
+val longest_string2 =
   foldl (fn (x, longest_string) => if String.size x >= String.size longest_string
 				   then x
-				   else longest_string) "" strs
+				   else longest_string) ""
 (* problem 4 *)
-fun longest_string_helper f strs =
-  foldl (fn (x, longest_string) => if f (String.size x, String.size longest_string) then x else longest_string) "" strs
+fun longest_string_helper f =
+  foldl (fn (x, longest_string) => if f (String.size x, String.size longest_string) then x else longest_string) ""
 
 val longest_string3 =
-    longest_string_helper (fn (sizeOfX, sizeOflongest_string) => sizeOfX > sizeOflongest_string)
+    longest_string_helper (fn (size_of_x, size_of_longest_string) => size_of_x > size_of_longest_string)
 
 val longest_string4 =
-    longest_string_helper (fn (sizeOfX, sizeOflongest_string) => sizeOfX >= sizeOflongest_string)
+    longest_string_helper (fn (size_of_x, size_of_longest_string) => size_of_x >= size_of_longest_string)
 
 (* problem 5 *)
 val longest_capitalized =
@@ -71,21 +71,21 @@ fun first_answer f list =
 fun all_answers f list =
  let fun helper (xs, acc) =
        case xs of
-	   [] => acc
+	   [] => SOME acc
 	 | x::xs => case f x of
 			NONE => NONE
-		      | SOME v => helper (xs, SOME(valOf(acc) @ v))
+		      | SOME v => helper(xs, acc @ v)
  in
-     helper(list, SOME [])
+     helper(list, [])
  end	       		     
       
 (* problem 9a *)
 val count_wildcards =
-  g (fn _=> 1) (fn x:string => 0)
+  g (fn _=> 1) (fn x => 0)
 
 (* problem 9b *)
 val count_wild_and_variable_lengths =
-    g (fn _ => 1) (fn x => String.size x)
+    g (fn _ => 1) String.size
 
 (* problem 9c *)      
 fun count_some_var (strs, p) =
@@ -139,7 +139,8 @@ datatype typ = Anything
 
  (**** you can put all your code here ****)
 
-  (* Homework3 Simple Test*)
+
+ (* Homework3 Simple Test*)
 (* These are basic test cases. Passing these tests does not guarantee that your code will pass the actual homework grader *)
 (* To run the test, add a new line to the top of this file: use "homeworkname.sml"; *)
 (* All the tests should evaluate to true. For example, the REPL should say: val test1 = true : bool *)
@@ -237,4 +238,5 @@ val test1111 = match (Tuple [Const(1), Tuple [Unit, Const(2)]], TupleP [ConstP 1
 val test12 = first_match Unit [UnitP] = SOME []
 val test1201 = first_match Unit [Variable ("s")] = SOME [("s", Unit)]
 val test1202 = first_match (Tuple [Const(1), Tuple [Unit, Const(2)]]) [(TupleP [ConstP 1, TupleP[UnitP, Variable("s")]])] = SOME [("s", Const(2))]
-val test1203 = first_match (Tuple [Const(1), Tuple [Unit, Const(2)]]) [(TupleP [ConstP 1, TupleP[UnitP, ConstP 3]])] = NONE			       
+val test1203 = first_match (Tuple [Const(1), Tuple [Unit, Const(2)]]) [(TupleP [ConstP 1, TupleP[UnitP, ConstP 3]])] = NONE	
+			       
