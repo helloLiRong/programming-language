@@ -26,109 +26,6 @@ fun g f1 f2 p =
 	  | _                 => 0
     end
 
-(* problem 1 *)
-val only_capitals =
-  List.filter (fn s => Char.isUpper (String.sub(s,0)))
-
-(* problem 2 *)	      
-val longest_string1 =
-  foldl (fn (x, longest_string) => if String.size x > String.size longest_string
-				   then x
-				   else longest_string) ""
-
-(* problem 3 *)
-val longest_string2 =
-  foldl (fn (x, longest_string) => if String.size x >= String.size longest_string
-				   then x
-				   else longest_string) ""
-(* problem 4 *)
-fun longest_string_helper f =
-  foldl (fn (x, longest_string) => if f (String.size x, String.size longest_string) then x else longest_string) ""
-
-val longest_string3 =
-    longest_string_helper (fn (size_of_x, size_of_longest_string) => size_of_x > size_of_longest_string)
-
-val longest_string4 =
-    longest_string_helper (fn (size_of_x, size_of_longest_string) => size_of_x >= size_of_longest_string)
-
-(* problem 5 *)
-val longest_capitalized =
-    longest_string1 o only_capitals
-
-(* problem 6 *)
-val rev_string =
-    implode o rev o explode
-
-(* problem 7 *)
-fun first_answer f list =
-  case list of
-      [] => raise NoAnswer
-    | x::xs' => case f x of
-		    NONE => first_answer f xs'
-		  | SOME v => v
-
-(* problem 8 *)
-fun all_answers f list =
- let fun helper (xs, acc) =
-       case xs of
-	   [] => SOME acc
-	 | x::xs => case f x of
-			NONE => NONE
-		      | SOME v => helper(xs, acc @ v)
- in
-     helper(list, [])
- end	       		     
-      
-(* problem 9a *)
-val count_wildcards =
-  g (fn _=> 1) (fn x => 0)
-
-(* problem 9b *)
-val count_wild_and_variable_lengths =
-    g (fn _ => 1) String.size
-
-(* problem 9c *)      
-fun count_some_var (strs, p) =
-  g (fn _ => 0) (fn x => if x = strs then 1 else 0) p
-  
-(* problem 10 *)
-fun check_pat p =
-  let fun find_var pat =
-	case pat of
-	    Variable x => [x]
-	   |TupleP ps => List.foldl (fn (p', acc) => (find_var p') @ acc) [] ps
-	   |ConstructorP (s', p') => find_var p'
-	   | _ => []		      
-      fun check_exists strs =
-	case strs of
-	    [] => true
-	  | x::xs => (not (List.exists (fn x' => x' = x) xs)) andalso check_exists xs									
-  in
-      check_exists (find_var p)
-  end
-      
-		      
-(* problem 11 *)
-fun match (value, pat) =
-  case (value, pat) of
-      (_, Wildcard) => SOME []
-    | (v, Variable s) => SOME [(s,v)]
-    | (Unit, UnitP) => SOME []
-    | (Const i, ConstP j) => if i = j then SOME [] else NONE
-    | (Tuple vs, TupleP ps) => if List.length vs = List.length ps
-			       then all_answers match ListPair.zip(vs,ps)
-			       else NONE					
-    | (Constructor(s2,v), ConstructorP(s1,p)) => if s1 = s2
-						 then match(v,p)
-						 else NONE							  
-    | _ => NONE
-	       
-
-(* problem 12 *)
-fun first_match value ps =
- SOME (first_answer (fn x => match (value, x)) ps)
-	       handle NoAnswer => NONE
-    
 (**** for the challenge problem only ****)
 
 datatype typ = Anything
@@ -137,8 +34,89 @@ datatype typ = Anything
 	     | TupleT of typ list
 	     | Datatype of string
 
- (**** you can put all your code here ****)
+(**** you can put all your code here ****)
 
+(* Problem 1 *)
+fun only_capitals lst = List.filter (fn x => Char.isUpper (String.sub (x, 0))) lst
+
+(* Problem 2 *)
+fun longest_string1 lst = foldl (fn (x,y) => if String.size (x) > String.size (y) then x else y) ""  lst
+
+(* Problem 3 *)
+fun longest_string2 lst = foldl (fn (x,y) => if String.size (x) >= String.size (y) then x else y) "" lst				
+
+(* Problem 4 *)
+fun longest_string_helper f lst = foldl (fn (x,y) => if f(x,y) then x else y) "" lst
+
+val longest_string3 = longest_string_helper (fn (x,y) => String.size(x) > String.size(y));
+val longest_string4 = longest_string_helper (fn (x,y) => String.size(x) >= String.size(y));
+
+(* Problem 5 *)
+val longest_capitalized = longest_string1 o only_capitals;
+
+(* Problem 6 *)
+val rev_string = String.implode o rev o String.explode;
+
+(* Problem 7 *)
+fun first_answer f lst =
+  case lst of
+      [] => raise NoAnswer
+    | hd::rest => case f(hd) of
+		      NONE => first_answer f rest
+		    | SOME v => v
+
+(* Problem 8 *)
+fun all_answers f lst =
+  let fun helper f acc lst =
+	case lst of
+	    [] => SOME acc
+	  | hd::rest => case f(hd) of
+			    NONE => NONE
+			  | SOME v => helper f (acc @ v) rest
+  in
+      helper f [] lst
+  end
+
+(* Problem 9a *)
+val count_wildcards = g (fn () => 1) (fn x => 0);
+
+(* Problem 9b *)
+val count_wild_and_variable_lengths = g (fn () => 1) (fn x => String.size(x));
+
+(* Problem 9c *)
+fun count_some_var (str, p) = g (fn () => 0) (fn x => if x = str then 1 else 0) p
+
+(* Problem 10 *)
+fun check_pat p =
+  let
+      fun all_var_strings p = case p of
+				  Variable x => [x]
+				| TupleP ps => foldl (fn (x,y) => y @ (all_var_strings x)) [] ps
+				| ConstructorP (_,p) => all_var_strings p
+				| _ => []
+      fun different_strings (lst) = case lst of
+					[] => true
+				      | hd::rest => if List.exists(fn x => x = hd) rest then false else different_strings(rest)
+  in
+      (different_strings o all_var_strings) p
+  end
+
+(* Problem 11 *)
+fun match (v, p) =
+  case (v,p) of
+      (_, Wildcard) => SOME []
+    | (_, Variable s) => SOME [(s,v)]
+    | (Unit, UnitP) => SOME []
+    | (Const c1, ConstP c2) => if c1 = c2 then SOME [] else NONE
+    | (Tuple vs, TupleP ps) => if List.length(vs) = List.length(ps) then  all_answers match (ListPair.zip(vs, ps)) else NONE
+    | (Constructor (s2, v), ConstructorP (s1, p)) => if s2 = s1 then match (v,p) else NONE
+    | _ => NONE
+
+	       
+(* Problem 12 *)
+fun first_match v ps =
+  (SOME(first_answer (fn p => match (v,p)) ps)
+      handle NoAnswer => NONE)
 
  (* Homework3 Simple Test*)
 (* These are basic test cases. Passing these tests does not guarantee that your code will pass the actual homework grader *)
@@ -239,4 +217,3 @@ val test12 = first_match Unit [UnitP] = SOME []
 val test1201 = first_match Unit [Variable ("s")] = SOME [("s", Unit)]
 val test1202 = first_match (Tuple [Const(1), Tuple [Unit, Const(2)]]) [(TupleP [ConstP 1, TupleP[UnitP, Variable("s")]])] = SOME [("s", Const(2))]
 val test1203 = first_match (Tuple [Const(1), Tuple [Unit, Const(2)]]) [(TupleP [ConstP 1, TupleP[UnitP, ConstP 3]])] = NONE	
-			       
